@@ -2,17 +2,25 @@
 
 Data Transfer Objects for API boundaries.
 
-## Expected DTOs
+## Implemented DTOs
 
 **Requests:**
 - `LoginRequest.java`
 - `RegisterRequest.java`
+- `ChangePasswordRequest.java` - Email, current password, new password
+
+**Responses:**
+- `AuthResponse.java` - Token, user info
+- `MessageResponse.java` - Simple message response
+
+## Expected DTOs
+
+**Requests:**
 - `SearchRequest.java` - Query text, filters, pagination
 - `IndexingRequest.java` - Asset metadata submission
 - `SourceCreateRequest.java`
 
 **Responses:**
-- `AuthResponse.java` - Token, user info
 - `AssetResponse.java` - Asset detail with metadata
 - `SearchResponse.java` - Results list, ranking info, total count
 - `SearchResultItem.java` - Single result with score

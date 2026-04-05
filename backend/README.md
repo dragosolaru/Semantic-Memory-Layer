@@ -3,17 +3,52 @@
 ## Prerequisites
 
 - Java 17+
-- PostgreSQL 15+ (running on localhost:5432)
 - Maven
+- PostgreSQL 18+ (installed at `/Library/PostgreSQL/18/`)
+
+## Security
+
+### Authentication
+- JWT-based authentication
+- Tokens expire after 24 hours (configurable via `jwt.expiration`)
+
+### Endpoint Access
+
+| Endpoint | Auth Required | Description |
+|----------|-------------|-------------|
+| `/api/health` | No | Health check (public) |
+| `/api/auth/login` | No | User login (public) |
+| `/api/auth/register` | No | User registration (public) |
+| `/api/auth/change-password` | Yes | Change password |
+| `/api/search` | Yes | Semantic search |
+
+### CORS Configuration
+
+Configure allowed origins in `application.properties`:
+```properties
+app.cors.allowed-origins=http://localhost:3000,https://example.com
+```
+
+**Security Notes:**
+- CORS wildcard (`*`) is disabled for security
+- Only configured origins are allowed
+- Credentials are supported
 
 ## Setup
 
 ```bash
-# Install dependencies
 cd backend
+
+# Install dependencies
 ./mvnw clean install
 
 # Run
+mvn spring-boot:run
+```
+
+**Alternative with Maven Wrapper:**
+```bash
+cd backend
 ./mvnw spring-boot:run
 ```
 
@@ -23,16 +58,86 @@ cd backend
 |-------|------|-------------|
 | POST | /api/auth/register | Register new user |
 | POST | /api/auth/login | Login user |
+| POST | /api/auth/change-password | Change user password (requires JWT) |
 | POST | /api/search | Search assets |
 | GET | /api/health | Health check |
+
+### Change Password
+
+**Endpoint:** `POST /api/auth/change-password`
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Request Body:**
+```json
+{
+  "email": "user@example.com",
+  "currentPassword": "oldPassword123",
+  "newPassword": "newPassword456"
+}
+```
+
+**Response:** `200 OK`
+```json
+{
+  "message": "Password changed successfully"
+}
+```
+
+**Errors:**
+- `400` - Current password is incorrect
+- `404` - User not found
 
 ## Environment
 
 Variables from `src/main/resources/application.properties`:
 - `server.port` - API port (default 8080)
-- `spring.datasource.url` - PostgreSQL URL
+- `spring.datasource.url` - Database URL
 - `jwt.secret` - JWT signing secret
 
 ## Database
 
-Uses JPA with automatic schema creation. For production, use Flyway migrations.
+### PostgreSQL (Default)
+
+The application uses PostgreSQL as the default database.
+
+**Prerequisites:**
+- PostgreSQL 18 installed at `/Library/PostgreSQL/18/`
+- Database `semanticmemory` created
+
+**Start PostgreSQL:**
+```bash
+/Library/PostgreSQL/18/bin/pg_ctl -D /Library/PostgreSQL/18/data start
+```
+
+**Create Database:**
+```bash
+PGPASSWORD=postgres /Library/PostgreSQL/18/bin/psql -h localhost -U postgres -c "CREATE DATABASE semanticmemory;"
+```
+
+**Configuration (application.properties):**
+```properties
+spring.datasource.url=jdbc:postgresql://localhost:5432/semanticmemory
+spring.datasource.driver-class-name=org.postgresql.Driver
+spring.datasource.username=postgres
+spring.datasource.password=postgres
+spring.jpa.hibernate.ddl-auto=update
+```
+
+### Access with pgAdmin4
+
+1. Open pgAdmin4: `/Library/PostgreSQL/18/pgAdmin 4.app`
+2. Create a new server:
+   - Host: `localhost`
+   - Port: `5432`
+   - Database: `semanticmemory`
+   - Username: `postgres`
+   - Password: `postgres`
+
+### Database Tables
+
+The following tables are automatically created (via JPA Hibernate with `ddl-auto=update`):
+- `users` - User accounts
+- `workspaces` - User workspaces
+- `sources` - Data sources
+- `assets` - Indexed files/documents

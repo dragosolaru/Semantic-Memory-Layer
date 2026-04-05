@@ -1,11 +1,29 @@
+/**
+ * Registration Page
+ * 
+ * New user registration form with name, email, and password.
+ * On success, automatically logs in and redirects to dashboard.
+ * 
+ * @module app/register/page
+ */
+
 'use client';
 
-import { useState } from 'react';
+import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { api } from '@/lib/api';
 
+/**
+ * RegisterPage Component
+ * 
+ * Renders registration form with name, email, password inputs.
+ * Minimum password length: 6 characters.
+ * On success, authenticates and redirects to dashboard.
+ * 
+ * @returns {JSX.Element} Registration form
+ */
 export default function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -15,7 +33,12 @@ export default function RegisterPage() {
   const { login } = useAuth();
   const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  /**
+   * Handle form submission
+   * Creates account, authenticates, and redirects on success
+   * @param {FormEvent} e - Form submit event
+   */
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);

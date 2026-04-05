@@ -1,10 +1,28 @@
+/**
+ * Root Page
+ * 
+ * Entry point - redirects to dashboard or login.
+ * Handles initial auth state check.
+ * 
+ * @module app/page
+ */
+
 'use client';
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 
-export default function Home() {
+/**
+ * RootPage Component
+ * 
+ * Checks authentication state and redirects:
+ * - Authenticated: /home
+ * - Not authenticated: /login
+ * 
+ * @returns {JSX.Element} Loading indicator
+ */
+export default function RootPage() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
 

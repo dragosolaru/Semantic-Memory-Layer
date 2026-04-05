@@ -1,11 +1,28 @@
+/**
+ * Login Page
+ * 
+ * User authentication page with email and password login.
+ * On success, stores JWT in memory and redirects to dashboard.
+ * 
+ * @module app/login/page
+ */
+
 'use client';
 
-import { useState } from 'react';
+import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { api } from '@/lib/api';
 
+/**
+ * LoginPage Component
+ * 
+ * Renders login form with email/password inputs.
+ * Handles authentication via API and redirects on success.
+ * 
+ * @returns {JSX.Element} Login form
+ */
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -14,7 +31,12 @@ export default function LoginPage() {
   const { login } = useAuth();
   const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  /**
+   * Handle form submission
+   * Authenticates user and redirects to dashboard on success
+   * @param {FormEvent} e - Form submit event
+   */
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
@@ -63,7 +85,7 @@ export default function LoginPage() {
           </button>
         </form>
         <p className="auth-link">
-          Don't have an account? <Link href="/register">Register</Link>
+          Don&apos;t have an account? <Link href="/register">Register</Link>
         </p>
       </div>
     </div>

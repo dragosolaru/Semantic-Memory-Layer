@@ -2,9 +2,12 @@
 
 Spring configuration classes.
 
+## Current Configs
+
+- `SecurityConfig.java` - Spring Security, JWT, CORS, password encoder
+
 ## Expected Configs
 
-- `SecurityConfig.java` - Spring Security, JWT, CORS
 - `WebConfig.java` - CORS, interceptors
 - `DatabaseConfig.java` - DataSource, JPA, pgvector setup
 - `RedisConfig.java` - Redis connection, cache config
