@@ -5,13 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
 import { api } from '@/lib/api';
-
-interface SearchResult {
-  id: string;
-  title: string;
-  content: string;
-  score: number;
-}
+import { SearchResult, SearchResponse } from '@/lib/types';
 
 export default function SearchPage() {
   const [query, setQuery] = useState('');
@@ -35,8 +29,8 @@ export default function SearchPage() {
     setHasSearched(true);
 
     try {
-      const response = await api.search(query);
-      setResults(response.results as SearchResult[]);
+      const response: SearchResponse = await api.search({ query });
+      setResults(response.results || []);
     } catch (err) {
       console.error('Search failed:', err);
       setResults([]);
@@ -72,9 +66,12 @@ export default function SearchPage() {
               <p className="results-count">Found {results.length} results</p>
               <div className="results-list">
                 {results.map((result) => (
-                  <div key={result.id} className="result-card">
-                    <h3>{result.title}</h3>
-                    <p>{result.content}</p>
+                  <div key={result.asset.id} className="result-card">
+                    <h3>{result.asset.fileName}</h3>
+                    <p className="file-type">{result.asset.fileType}</p>
+                    {result.highlightedText && (
+                      <p className="highlighted-text">{result.highlightedText}</p>
+                    )}
                     <span className="relevance-score">
                       Relevance: {Math.round(result.score * 100)}%
                     </span>

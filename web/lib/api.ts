@@ -1,4 +1,4 @@
-import { LoginRequest, RegisterRequest, AuthResponse, User } from './types';
+import { LoginRequest, RegisterRequest, AuthResponse, SearchRequest, SearchResponse, User } from './types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
@@ -24,19 +24,19 @@ async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise
 }
 
 export const api = {
-  login: (data: LoginRequest) => 
+  login: (data: LoginRequest): Promise<AuthResponse> => 
     fetchApi<AuthResponse>('/auth/login', { method: 'POST', body: JSON.stringify(data) }),
   
-  register: (data: RegisterRequest) => 
+  register: (data: RegisterRequest): Promise<AuthResponse> => 
     fetchApi<AuthResponse>('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
   
-  getUser: () => 
+  getUser: (): Promise<User> => 
     fetchApi<User>('/auth/me', { method: 'GET' }),
   
-  search: (query: string) => 
-    fetchApi<{ results: unknown[] }>('/search', { 
+  search: (request: SearchRequest): Promise<SearchResponse> => 
+    fetchApi<SearchResponse>('/search', { 
       method: 'POST', 
-      body: JSON.stringify({ query }) 
+      body: JSON.stringify(request) 
     }),
   
   logout: () => {
