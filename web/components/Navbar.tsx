@@ -26,6 +26,7 @@ export default function Navbar() {
           <>
             <Link href="/home">Home</Link>
             <Link href="/search">Search</Link>
+            <Link href="/change-password">Settings</Link>
             <span className="user-name">{user.name}</span>
             <button onClick={handleLogout} className="btn-logout">
               Logout

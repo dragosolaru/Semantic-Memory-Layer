@@ -73,6 +73,20 @@ public class AuthService {
                 .build())
             .build();
     }
+
+    public MessageResponse changePassword(ChangePasswordRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new RuntimeException("Current password is incorrect");
+        }
+        
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+        
+        return new MessageResponse("Password changed successfully");
+    }
     
     public Optional<User> getUserById(String id) {
         return userRepository.findById(java.util.UUID.fromString(id));

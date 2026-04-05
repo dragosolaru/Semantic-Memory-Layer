@@ -2,9 +2,12 @@
 
 API endpoint definitions.
 
+## Implemented Controllers
+
+- `AuthController.java` - Login, register, change password
+
 ## Expected Controllers
 
-- `AuthController.java` - Login, register, refresh token
 - `AssetController.java` - Asset CRUD, list, detail
 - `SearchController.java` - Search queries, results
 - `SourceController.java` - Source management (add, remove, status)

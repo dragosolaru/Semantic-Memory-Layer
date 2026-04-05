@@ -4,22 +4,21 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 
 import javax.sql.DataSource;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 @Configuration
 public class AppConfig {
 
-    @Value("${DATABASE_URL:jdbc:postgresql://localhost:5432/semanticmemory}")
+    @Value("${DATABASE_URL:jdbc:h2:file:./data/semanticmemory}")
     private String databaseUrl;
 
-    @Value("${DATABASE_USERNAME:postgres}")
+    @Value("${DATABASE_USERNAME:sa}")
     private String databaseUsername;
 
-    @Value("${DATABASE_PASSWORD:postgres}")
+    @Value("${DATABASE_PASSWORD:}")
     private String databasePassword;
 
     @Value("${JWT_SECRET:semantic-memory-secret-key-minimum-256-bits-for-hs256}")
@@ -30,9 +29,24 @@ public class AppConfig {
 
     @Bean
     public DataSource dataSource() {
-        return new EmbeddedDatabaseBuilder()
-            .setType(EmbeddedDatabaseType.H2)
-            .build();
+        try {
+            if (databaseUrl.startsWith("jdbc:h2:file:")) {
+                String path = databaseUrl.replace("jdbc:h2:file:", "").split(";")[0];
+                Path dataDir = Path.of(path).getParent();
+                if (dataDir != null && !Files.exists(dataDir)) {
+                    Files.createDirectories(dataDir);
+                    System.out.println("Created data directory: " + dataDir.toAbsolutePath());
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Warning: Could not create data directory: " + e.getMessage());
+        }
+
+        return new org.springframework.jdbc.datasource.DriverManagerDataSource(
+            databaseUrl,
+            databaseUsername,
+            databasePassword
+        );
     }
 
     @Bean

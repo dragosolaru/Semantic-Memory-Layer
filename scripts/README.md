@@ -10,6 +10,44 @@ scripts/
 └── ci/      # CI/CD pipeline scripts
 ```
 
+## Dev Scripts
+
+### start.sh
+
+Script principal pentru pornirea serviciilor de dezvoltare.
+
+**Locație:** `scripts/dev/start.sh`
+
+**Utilizare:**
+
+```bash
+# Pornește toate serviciile (backend + web + mobile)
+./scripts/dev/start.sh all
+
+# Pornește doar backend (Spring Boot)
+./scripts/dev/start.sh backend
+
+# Pornește doar web (Next.js)
+./scripts/dev/start.sh web
+
+# Pornește doar mobile (React Native)
+./scripts/dev/start.sh mobile
+
+# Oprește toate serviciile
+./scripts/dev/start.sh stop
+```
+
+**Porturi:**
+- Backend: `http://localhost:8080`
+- Web: `http://localhost:3000`
+- Mobile: `http://localhost:8081`
+
+**Cerințe:**
+- Maven (`mvn` sau `mvnw` din directorul backend)
+- Node.js + npm (pentru web și mobile)
+
+---
+
 ## Expected Dev Scripts
 
 - `dev/setup.sh` - One-command local environment setup

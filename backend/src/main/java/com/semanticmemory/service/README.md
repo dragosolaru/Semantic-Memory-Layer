@@ -2,9 +2,12 @@
 
 Core business logic layer.
 
+## Implemented Services
+
+- `AuthService.java` - Authentication, token management, password change
+
 ## Expected Services
 
-- `AuthService.java` - Authentication, token management
 - `UserService.java` - User profile, settings management
 - `AssetService.java` - Asset CRUD, metadata management
 - `SearchService.java` - Query parsing, hybrid retrieval, ranking
