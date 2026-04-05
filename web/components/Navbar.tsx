@@ -1,13 +1,36 @@
+/**
+ * Navbar Component
+ * 
+ * Application navigation bar with branding and auth controls.
+ * Shows different links based on authentication state.
+ * 
+ * @module components/Navbar
+ */
+
 'use client';
 
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 
+/**
+ * Navbar Component
+ * 
+ * Responsive navigation with:
+ * - Brand link to home
+ * - Authenticated: Home, Search, Settings, User name, Logout
+ * - Unauthenticated: Login, Register
+ * 
+ * @returns {JSX.Element} Navigation bar
+ */
 export default function Navbar() {
   const { user, logout, isLoading } = useAuth();
   const router = useRouter();
 
+  /**
+   * Handle user logout
+   * Clears auth state and redirects to login
+   */
   const handleLogout = () => {
     logout();
     router.push('/login');

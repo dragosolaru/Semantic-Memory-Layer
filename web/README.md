@@ -33,6 +33,28 @@ Next.js web application for the Semantic Memory Layer platform.
 | `/search` | Semantic search (requires auth) |
 | `/change-password` | Change password (requires auth) |
 
+## Project Structure
+
+```
+web/
+├── app/                    # Next.js App Router pages
+│   ├── login/page.tsx      # Login page
+│   ├── register/page.tsx   # Registration page
+│   ├── home/page.tsx       # Dashboard
+│   ├── search/page.tsx     # Search page
+│   ├── change-password/    # Password change
+│   ├── ProtectedRoute.tsx  # Auth guard component
+│   ├── layout.tsx         # Root layout
+│   └── page.tsx          # Root redirect
+├── lib/                   # Core utilities
+│   ├── api.ts           # API client (in-memory token)
+│   ├── auth.tsx         # Authentication context
+│   └── types.ts        # TypeScript types
+├── components/
+│   └── Navbar.tsx      # Navigation bar
+└── public/              # Static assets
+```
+
 ## Setup
 
 ```bash
@@ -80,6 +102,35 @@ All authenticated pages use the `ProtectedRoute` component which:
 ### Known Limitations
 - User must log in again after closing browser tab (token not persisted)
 - This is by design for security - trade-off between convenience and safety
+
+## Code Review Summary
+
+### Resolved Issues
+
+| Issue | Status |
+|------|--------|
+| JWT in localStorage (XSS vulnerability) | ✅ Fixed - In-memory token |
+| Duplicate auth check logic | ✅ Fixed - ProtectedRoute component |
+| Raw fetch in change-password | ✅ Fixed - API helper |
+| No logout API call | ✅ Fixed - Async logout |
+| Hardcoded API URL | ✅ Fixed - API_URL export |
+| Unused imports | ✅ Fixed |
+
+### Architecture
+
+```
+Local Storage:
+  - user: { id, email, name, subscriptionTier? }  (cached for UX)
+  - NO token stored (security)
+
+In-Memory (api.ts):
+  - currentToken: string | null  (JWT, not persisted)
+
+Auth Flow:
+  login() → setApiToken() → localStorage.setItem('user')
+  api calls → getToken() → Authorization header
+  logout() → api.logout() → clear memory + localStorage
+```
 
 ## Tech Stack
 

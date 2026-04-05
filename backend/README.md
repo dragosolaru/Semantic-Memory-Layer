@@ -6,6 +6,34 @@
 - Maven
 - PostgreSQL 18+ (installed at `/Library/PostgreSQL/18/`)
 
+## Security
+
+### Authentication
+- JWT-based authentication
+- Tokens expire after 24 hours (configurable via `jwt.expiration`)
+
+### Endpoint Access
+
+| Endpoint | Auth Required | Description |
+|----------|-------------|-------------|
+| `/api/health` | No | Health check (public) |
+| `/api/auth/login` | No | User login (public) |
+| `/api/auth/register` | No | User registration (public) |
+| `/api/auth/change-password` | Yes | Change password |
+| `/api/search` | Yes | Semantic search |
+
+### CORS Configuration
+
+Configure allowed origins in `application.properties`:
+```properties
+app.cors.allowed-origins=http://localhost:3000,https://example.com
+```
+
+**Security Notes:**
+- CORS wildcard (`*`) is disabled for security
+- Only configured origins are allowed
+- Credentials are supported
+
 ## Setup
 
 ```bash
