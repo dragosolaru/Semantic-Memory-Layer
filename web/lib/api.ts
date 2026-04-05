@@ -18,7 +18,6 @@ export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080
  * This prevents XSS token theft
  */
 let currentToken: string | null = null;
-let currentUserId: string | null = null;
 
 /**
  * Get current authentication token
@@ -26,14 +25,6 @@ let currentUserId: string | null = null;
  */
 export function getToken(): string | null {
   return currentToken;
-}
-
-/**
- * Get current authenticated user id
- * @returns {string | null} Current user id or null
- */
-export function getUserId(): string | null {
-  return currentUserId;
 }
 
 /**
@@ -46,15 +37,6 @@ export function setToken(token: string | null): void {
 }
 
 /**
- * Set current authenticated user id
- * Called by AuthProvider after login
- * @param {string | null} userId - User id
- */
-export function setUserId(userId: string | null): void {
-  currentUserId = userId;
-}
-
-/**
  * Internal fetch wrapper with authentication
  * @template T - Response type
  * @param {string} endpoint - API endpoint
@@ -63,11 +45,9 @@ export function setUserId(userId: string | null): void {
  */
 async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
-  const userId = getUserId();
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...(userId ? { 'X-User-Id': userId } : {}),
     ...options.headers,
   };
 
@@ -148,8 +128,7 @@ export const api = {
     } catch {
       // Continue with cleanup even if server call fails
     }
-    // Clear token and user id from memory
+    // Clear token from memory
     setToken(null);
-    setUserId(null);
   },
 };

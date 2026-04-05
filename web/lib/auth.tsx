@@ -12,7 +12,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from './types';
-import { api, getToken, setToken as setApiToken, setUserId as setApiUserId } from './api';
+import { api, getToken, setToken as setApiToken } from './api';
 
 /**
  * Authentication context type definition
@@ -72,13 +72,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * @param {User} userData - Authenticated user data
    */
   const login = (tokenValue: string, userData: User) => {
-    // Store token in memory (via api module) - NOT in localStorage for security
     setApiToken(tokenValue);
-    setApiUserId(userData.id);
     setUser(userData);
-    
-    // Cache user data (non-sensitive) for faster initial load
-    // Token is NOT stored - this prevents XSS token theft
     localStorage.setItem('user', JSON.stringify(userData));
   };
 
@@ -96,7 +91,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     // Clear token from memory
     setApiToken(null);
-    setApiUserId(null);
     setUser(null);
     // Clear user cache - token already not in localStorage
     localStorage.removeItem('user');

@@ -18,6 +18,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 import java.util.List;
 
+import jakarta.servlet.http.HttpServletResponse;
+
 /**
  * Security configuration for the application.
  * 
@@ -58,6 +60,13 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.setContentType("application/json");
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.getWriter().write("{\"error\":\"Unauthorized\",\"message\":\"Authentication required\"}");
+                })
+            )
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints (no authentication required)
                 .requestMatchers("/api/health").permitAll()

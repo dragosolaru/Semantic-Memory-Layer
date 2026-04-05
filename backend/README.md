@@ -9,8 +9,9 @@
 ## Security
 
 ### Authentication
-- JWT-based authentication
-- Tokens expire after 24 hours (configurable via `jwt.expiration`)
+- JWT-based authentication (stateless)
+- Token expiration: 24 hours (configurable via `jwt.expiration`)
+- User ID extracted from JWT claims (not headers for security)
 
 ### Endpoint Access
 
@@ -20,19 +21,51 @@
 | `/api/auth/login` | No | User login (public) |
 | `/api/auth/register` | No | User registration (public) |
 | `/api/auth/change-password` | Yes | Change password |
+| `/api/auth/logout` | Yes | User logout |
 | `/api/search` | Yes | Semantic search |
 
-### CORS Configuration
+### Security Features
 
-Configure allowed origins in `application.properties`:
-```properties
-app.cors.allowed-origins=http://localhost:3000,https://example.com
+1. **Global Exception Handler**
+   - Custom exceptions with safe error messages
+   - No internal server details exposed to clients
+   - Proper HTTP status codes (401, 404, 500)
+
+2. **CORS Configuration**
+   ```properties
+   app.cors.allowed-origins=http://localhost:3000
+   ```
+   - Wildcard (`*`) disabled
+   - Configurable origins
+   - Credentials supported
+
+3. **JWT Security**
+   - Tokens stored in memory (stateless)
+   - User ID from JWT principal (not HTTP headers)
+   - Token expiration configurable
+
+## Project Structure
+
 ```
-
-**Security Notes:**
-- CORS wildcard (`*`) is disabled for security
-- Only configured origins are allowed
-- Credentials are supported
+backend/src/main/java/com/semanticmemory/
+├── config/
+│   └── SecurityConfig.java       # Security configuration
+├── controller/
+│   ├── AuthController.java    # Authentication endpoints
+│   ├── HealthController.java # Health check
+│   └── SearchController.java # Search endpoints
+├── exception/
+│   └── GlobalExceptionHandler.java # Exception handling
+├── model/
+│   ├── dto/                # Request/Response DTOs
+│   └── entity/            # JPA entities
+├── repository/            # Data access
+├── security/
+│   └── JwtAuthenticationFilter.java # JWT filter
+└── service/
+    ├── AuthService.java    # Auth business logic
+    └── SearchService.java # Search business logic
+```
 
 ## Setup
 
@@ -54,22 +87,51 @@ cd backend
 
 ## API Endpoints
 
-| Method | Path | Description |
-|-------|------|-------------|
-| POST | /api/auth/register | Register new user |
-| POST | /api/auth/login | Login user |
-| POST | /api/auth/change-password | Change user password (requires JWT) |
-| POST | /api/search | Search assets |
-| GET | /api/health | Health check |
+### Authentication
 
-### Change Password
+#### Login
+```bash
+POST /api/auth/login
+Content-Type: application/json
 
-**Endpoint:** `POST /api/auth/change-password`
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+```
 
-**Headers:** `Authorization: Bearer <token>`
-
-**Request Body:**
+Response:
 ```json
+{
+  "token": "eyJ...",
+  "type": "Bearer",
+  "user": {
+    "id": "uuid",
+    "email": "user@example.com",
+    "name": "John Doe",
+    "subscriptionTier": "FREE"
+  }
+}
+```
+
+#### Register
+```bash
+POST /api/auth/register
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "password123",
+  "name": "John Doe"
+}
+```
+
+#### Change Password
+```bash
+POST /api/auth/change-password
+Authorization: Bearer <token>
+Content-Type: application/json
+
 {
   "email": "user@example.com",
   "currentPassword": "oldPassword123",
@@ -77,33 +139,66 @@ cd backend
 }
 ```
 
-**Response:** `200 OK`
-```json
+#### Logout
+```bash
+POST /api/auth/logout
+Authorization: Bearer <token>
+```
+
+### Search
+
+```bash
+POST /api/search
+Authorization: Bearer <token>
+Content-Type: application/json
+
 {
-  "message": "Password changed successfully"
+  "query": "search term",
+  "page": 0,
+  "pageSize": 10
 }
 ```
 
-**Errors:**
-- `400` - Current password is incorrect
-- `404` - User not found
+### Health Check
 
-## Environment
+```bash
+GET /api/health
+```
 
-Variables from `src/main/resources/application.properties`:
-- `server.port` - API port (default 8080)
-- `spring.datasource.url` - Database URL
-- `jwt.secret` - JWT signing secret
+## Error Responses
+
+| Status | Error | Description |
+|--------|-------|-------------|
+| 400 | Validation error | Invalid request body |
+| 401 | Invalid credentials | Login failed |
+| 401 | Email already exists | Registration failed |
+| 401 | Current password is incorrect | Password change failed |
+| 404 | User not found | Resource not found |
+| 500 | An unexpected error occurred | Server error (details hidden) |
+
+Example error response:
+```json
+{
+  "timestamp": "2024-01-01T12:00:00",
+  "status": 401,
+  "error": "Unauthorized",
+  "message": "Invalid credentials"
+}
+```
+
+## Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `server.port` | 8080 | API port |
+| `app.cors.allowed-origins` | http://localhost:3000 | CORS origins |
+| `jwt.secret` | (required) | JWT signing secret |
+| `jwt.expiration` | 86400000 | Token expiration (ms) |
+| `spring.datasource.url` | jdbc:postgresql://localhost:5432/semanticmemory | Database URL |
 
 ## Database
 
 ### PostgreSQL (Default)
-
-The application uses PostgreSQL as the default database.
-
-**Prerequisites:**
-- PostgreSQL 18 installed at `/Library/PostgreSQL/18/`
-- Database `semanticmemory` created
 
 **Start PostgreSQL:**
 ```bash
@@ -115,28 +210,9 @@ The application uses PostgreSQL as the default database.
 PGPASSWORD=postgres /Library/PostgreSQL/18/bin/psql -h localhost -U postgres -c "CREATE DATABASE semanticmemory;"
 ```
 
-**Configuration (application.properties):**
-```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/semanticmemory
-spring.datasource.driver-class-name=org.postgresql.Driver
-spring.datasource.username=postgres
-spring.datasource.password=postgres
-spring.jpa.hibernate.ddl-auto=update
-```
-
-### Access with pgAdmin4
-
-1. Open pgAdmin4: `/Library/PostgreSQL/18/pgAdmin 4.app`
-2. Create a new server:
-   - Host: `localhost`
-   - Port: `5432`
-   - Database: `semanticmemory`
-   - Username: `postgres`
-   - Password: `postgres`
-
 ### Database Tables
 
-The following tables are automatically created (via JPA Hibernate with `ddl-auto=update`):
+Auto-created via JPA Hibernate:
 - `users` - User accounts
 - `workspaces` - User workspaces
 - `sources` - Data sources
