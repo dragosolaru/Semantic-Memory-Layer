@@ -4,6 +4,7 @@
 
 - Java 17+
 - Maven
+- PostgreSQL 18+ (installed at `/Library/PostgreSQL/18/`)
 
 ## Setup
 
@@ -68,79 +69,47 @@ Variables from `src/main/resources/application.properties`:
 
 ## Database
 
-### Default (H2 File-Based)
+### PostgreSQL (Default)
 
-By default, the application uses an H2 file-based database stored in `backend/data/`. This is automatically created on first run.
+The application uses PostgreSQL as the default database.
 
-**Configuration:**
-```properties
-spring.datasource.url=jdbc:h2:file:./data/semanticmemory;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-spring.datasource.driver-class-name=org.h2.Driver
-spring.datasource.username=sa
-spring.datasource.password=
+**Prerequisites:**
+- PostgreSQL 18 installed at `/Library/PostgreSQL/18/`
+- Database `semanticmemory` created
+
+**Start PostgreSQL:**
+```bash
+/Library/PostgreSQL/18/bin/pg_ctl -D /Library/PostgreSQL/18/data start
 ```
 
-The database file will be created at: `backend/data/semanticmemory.mv.db`
+**Create Database:**
+```bash
+PGPASSWORD=postgres /Library/PostgreSQL/18/bin/psql -h localhost -U postgres -c "CREATE DATABASE semanticmemory;"
+```
 
-**Access H2 Console:**
-1. Add to `application.properties`: `spring.h2.console.enabled=true`
-2. Navigate to: `http://localhost:8080/h2-console`
-3. JDBC URL: `jdbc:h2:file:./data/semanticmemory`
-
-### PostgreSQL (Optional)
-
-To use PostgreSQL instead of H2:
-
-1. **Install PostgreSQL:**
-   ```bash
-   brew install postgresql@16
-   brew services start postgresql@16
-   ```
-
-2. **Create Database:**
-   ```bash
-   createdb semanticmemory
-   ```
-
-3. **Configure Environment Variables:**
-   ```bash
-   export DATABASE_URL=jdbc:postgresql://localhost:5432/semanticmemory
-   export DATABASE_USERNAME=postgres
-   export DATABASE_PASSWORD=postgres
-   ```
-
-   Or modify `application.properties`:
-   ```properties
-   spring.datasource.url=jdbc:postgresql://localhost:5432/semanticmemory
-   spring.datasource.driver-class-name=org.postgresql.Driver
-   spring.datasource.username=postgres
-   spring.datasource.password=postgres
-   ```
-
-4. **Add PostgreSQL dependency** (if not already in pom.xml):
-   ```xml
-   <dependency>
-       <groupId>org.postgresql</groupId>
-       <artifactId>postgresql</artifactId>
-   </dependency>
-   ```
+**Configuration (application.properties):**
+```properties
+spring.datasource.url=jdbc:postgresql://localhost:5432/semanticmemory
+spring.datasource.driver-class-name=org.postgresql.Driver
+spring.datasource.username=postgres
+spring.datasource.password=postgres
+spring.jpa.hibernate.ddl-auto=update
+```
 
 ### Access with pgAdmin4
 
-1. Create a new server in pgAdmin4
-2. Configure connection:
+1. Open pgAdmin4: `/Library/PostgreSQL/18/pgAdmin 4.app`
+2. Create a new server:
    - Host: `localhost`
    - Port: `5432`
-   - Database: `semanticmemory` (or the database name you created)
-   - Username: `postgres` (or your PostgreSQL username)
-   - Password: `postgres` (or your PostgreSQL password)
+   - Database: `semanticmemory`
+   - Username: `postgres`
+   - Password: `postgres`
 
 ### Database Tables
 
-The following tables are automatically created (via JPA Hibernate):
+The following tables are automatically created (via JPA Hibernate with `ddl-auto=update`):
 - `users` - User accounts
-- `memories` - Stored memories
-- `memory_tags` - Many-to-many relationship between memories and tags
-- `tags` - Memory tags
-
-Uses JPA with automatic schema creation (`spring.jpa.hibernate.ddl-auto=create-drop`). For production, use Flyway migrations.
+- `workspaces` - User workspaces
+- `sources` - Data sources
+- `assets` - Indexed files/documents

@@ -51,11 +51,13 @@ The app runs on `http://localhost:3000`
 
 ## Database
 
-The backend uses an H2 file-based database by default. See [backend README](../backend/README.md) for details.
+The backend uses PostgreSQL as the default database. See [backend README](../backend/README.md) for details.
 
 To access the database:
-- **H2 Console**: `http://localhost:8080/h2-console` (enable with `spring.h2.console.enabled=true`)
-- **pgAdmin4**: Connect to PostgreSQL if configured (see backend README)
+- **pgAdmin4**: `/Library/PostgreSQL/18/pgAdmin 4.app`
+  - Host: `localhost`, Port: `5432`
+  - Database: `semanticmemory`
+  - User: `postgres`, Password: `postgres`
 
 ## Tech Stack
 
