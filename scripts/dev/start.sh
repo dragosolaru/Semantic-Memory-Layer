@@ -5,14 +5,21 @@
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+
 echo "=========================================="
 echo "Starting Semantic Memory Layer"
 echo "=========================================="
+echo "Project directory: $PROJECT_DIR"
 
 # Colors for output
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+RED='\033[0;31m'
 NC='\033[0m' # No Color
+
+cd "$PROJECT_DIR"
 
 # Check for required tools
 check_tool() {
@@ -26,39 +33,48 @@ check_tool() {
 # Function to start backend
 start_backend() {
     echo -e "${GREEN}[1/3] Starting Backend (Spring Boot)...${NC}"
-    cd backend
-    if [ ! -f "mvnw" ]; then
-        mvn spring-boot:run &
+    if [ -f "backend/mvnw" ]; then
+        cd backend && ./mvnw spring-boot:run &
+    elif command -v mvn &> /dev/null; then
+        cd backend && mvn spring-boot:run &
     else
-        ./mvnw spring-boot:run &
+        echo -e "${RED}Error: Maven not found. Install with: brew install maven${NC}"
+        return 1
     fi
-    cd ..
+    cd "$PROJECT_DIR"
     echo "Backend starting on http://localhost:8080"
 }
 
 # Function to start web
 start_web() {
     echo -e "${GREEN}[2/3] Starting Web (Next.js)...${NC}"
-    cd web
-    npm run dev &
-    cd ..
+    if [ ! -f "web/package.json" ]; then
+        echo -e "${RED}Error: web/package.json not found${NC}"
+        return 1
+    fi
+    cd web && npm run dev &
+    cd "$PROJECT_DIR"
     echo "Web starting on http://localhost:3000"
 }
 
 # Function to start mobile
 start_mobile() {
     echo -e "${GREEN}[3/3] Starting Mobile (React Native)...${NC}"
-    cd mobile
-    npm run start &
-    cd ..
+    if [ ! -f "mobile/package.json" ]; then
+        echo -e "${RED}Error: mobile/package.json not found${NC}"
+        return 1
+    fi
+    cd mobile && npm run start &
+    cd "$PROJECT_DIR"
     echo "Metro bundler starting on http://localhost:8081"
 }
 
 # Parse arguments
 case "${1:-all}" in
     all)
-        check_tool mvn || echo "Install Maven: brew install maven"
-        check_tool npm || echo "Install Node.js"
+        if ! command -v mvn &> /dev/null; then
+            echo -e "${YELLOW}Warning: Maven not found. Install with: brew install maven${NC}"
+        fi
         
         start_backend &
         BACKEND_PID=$!
@@ -81,7 +97,6 @@ case "${1:-all}" in
         echo ""
         echo "Press Ctrl+C to stop all services"
         
-        # Wait for any process to exit
         wait
         ;;
     backend)
