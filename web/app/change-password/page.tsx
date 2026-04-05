@@ -1,17 +1,40 @@
+/**
+ * Change Password Page
+ * 
+ * User password change settings.
+ * Requires authentication to access.
+ * 
+ * @module app/change-password/page
+ */
+
 'use client';
 
-import { useState } from 'react';
+import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
+import { api } from '@/lib/api';
 
-interface ChangePasswordRequest {
+/** Local form state interface */
+interface ChangePasswordForm {
+  /** Current password for verification */
   currentPassword: string;
+  /** New password to set */
   newPassword: string;
+  /** Password confirmation */
   confirmPassword: string;
 }
 
+/**
+ * ChangePasswordPage Component
+ * 
+ * Form for changing user password.
+ * Requires current password for verification.
+ * Minimum new password length: 6 characters.
+ * 
+ * @returns {JSX.Element} Change password form
+ */
 export default function ChangePasswordPage() {
-  const [formData, setFormData] = useState<ChangePasswordRequest>({
+  const [formData, setFormData] = useState<ChangePasswordForm>({
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
@@ -19,19 +42,26 @@ export default function ChangePasswordPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { user, token } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  /**
+   * Handle form submission
+   * Validates passwords and calls change password API
+   * @param {FormEvent} e - Form submit event
+   */
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
 
+    // Validate password match
     if (formData.newPassword !== formData.confirmPassword) {
       setError('New passwords do not match');
       return;
     }
 
+    // Validate password length
     if (formData.newPassword.length < 6) {
       setError('Password must be at least 6 characters');
       return;
@@ -40,23 +70,11 @@ export default function ChangePasswordPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api'}/auth/change-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          email: user?.email,
-          currentPassword: formData.currentPassword,
-          newPassword: formData.newPassword,
-        }),
+      await api.changePassword({
+        email: user?.email || '',
+        currentPassword: formData.currentPassword,
+        newPassword: formData.newPassword,
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to change password');
-      }
 
       setSuccess('Password changed successfully');
       setTimeout(() => router.push('/home'), 2000);

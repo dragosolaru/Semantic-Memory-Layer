@@ -49,6 +49,47 @@ The app runs on `http://localhost:3000`
 |----------|---------|-------------|
 | `NEXT_PUBLIC_API_URL` | `http://localhost:8080/api` | Backend API URL |
 
+## Security
+
+This application implements security best practices:
+
+### Token Storage
+- **JWT tokens are stored in memory only** - NOT in localStorage or sessionStorage
+- This prevents XSS attacks from stealing tokens
+- User must re-authenticate after page refresh (token is cleared from memory)
+- User data (non-sensitive) is cached in localStorage for faster initial load
+
+### Authentication Flow
+1. User logs in with credentials
+2. Server returns JWT token + user data
+3. Token is stored in React state (memory) via `api.setToken()`
+4. User data is cached in localStorage for faster subsequent page loads
+5. On logout or token expiration, token is cleared from memory
+
+### Protected Routes
+All authenticated pages use the `ProtectedRoute` component which:
+- Checks if user is authenticated
+- Redirects to login if not authenticated
+- Shows loading state while checking auth
+
+### API Security
+- All authenticated API calls include JWT in Authorization header
+- Tokens are retrieved from in-memory store (not localStorage)
+- Logout endpoint invalidates token on server
+
+### Known Limitations
+- User must log in again after closing browser tab (token not persisted)
+- This is by design for security - trade-off between convenience and safety
+
+## Tech Stack
+
+- **Framework**: Next.js 16.2.2 (App Router)
+- **Language**: TypeScript
+- **Styling**: CSS Modules / Global CSS
+- **State**: React Context for auth
+- **API**: REST with JWT Bearer tokens
+- **Security**: In-memory token storage
+
 ## Database
 
 The backend uses PostgreSQL as the default database. See [backend README](../backend/README.md) for details.
@@ -58,11 +99,3 @@ To access the database:
   - Host: `localhost`, Port: `5432`
   - Database: `semanticmemory`
   - User: `postgres`, Password: `postgres`
-
-## Tech Stack
-
-- **Framework**: Next.js 14 (App Router)
-- **Language**: TypeScript
-- **Styling**: CSS Modules / Global CSS
-- **State**: React Context for auth
-- **API**: REST with JWT Bearer tokens
