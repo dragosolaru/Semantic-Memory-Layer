@@ -1,0 +1,28 @@
+# Secrets
+.env
+.env.*
+*.pem
+*.key
+
+# OS
+.DS_Store
+*.swp
+
+# Backend
+backend/target/
+backend/*.log
+
+# Mobile  
+mobile/node_modules/
+mobile/android/build/
+mobile/ios/build/
+
+# Web
+web/node_modules/
+web/.next/
+web/out/
+web/build/
+
+# IDE
+.idea/
+*.iml
