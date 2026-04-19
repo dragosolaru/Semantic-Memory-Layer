@@ -1,39 +1,23 @@
-/**
- * Navbar Component
- * 
- * Application navigation bar with branding and auth controls.
- * Shows different links based on authentication state.
- * 
- * @module components/Navbar
- */
-
 'use client';
 
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
+import { API_URL } from '@/lib/api';
 
-/**
- * Navbar Component
- * 
- * Responsive navigation with:
- * - Brand link to home
- * - Authenticated: Home, Search, Settings, User name, Logout
- * - Unauthenticated: Login, Register
- * 
- * @returns {JSX.Element} Navigation bar
- */
 export default function Navbar() {
   const { user, logout, isLoading } = useAuth();
   const router = useRouter();
 
-  /**
-   * Handle user logout
-   * Clears auth state and redirects to login
-   */
   const handleLogout = () => {
     logout();
     router.push('/login');
+  };
+
+  const getUserDisplay = () => {
+    const name = user?.firstName || user?.name || 'User';
+    const initial = name.charAt(0).toUpperCase();
+    return { name, initial };
   };
 
   if (isLoading) return null;
@@ -48,8 +32,20 @@ export default function Navbar() {
           <>
             <Link href="/home">Home</Link>
             <Link href="/search">Search</Link>
-            <Link href="/change-password">Settings</Link>
-            <span className="user-name">{user.name}</span>
+            <Link href="/profile" className="user-avatar-container">
+              {user.profileImageUrl ? (
+                <img 
+                  src={user.profileImageUrl.startsWith('http') ? user.profileImageUrl : `${API_URL}/${user.profileImageUrl}`}
+                  alt="Profile" 
+                  className="user-avatar-img"
+                />
+              ) : (
+                <div className="user-avatar-placeholder">
+                  {getUserDisplay().initial}
+                </div>
+              )}
+              <span className="user-tooltip">{getUserDisplay().name}</span>
+            </Link>
             <button onClick={handleLogout} className="btn-logout">
               Logout
             </button>

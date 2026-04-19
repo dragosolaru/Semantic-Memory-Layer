@@ -43,8 +43,9 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   useEffect(() => {
     if (!isLoading && !user) {
-      // Redirect to login with return URL
-      router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+      // Only redirect to login if there's no valid session
+      // Use replace to avoid history stack buildup
+      router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
     }
   }, [user, isLoading, router, pathname]);
 

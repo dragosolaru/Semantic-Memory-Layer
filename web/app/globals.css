@@ -79,6 +79,55 @@ a:hover {
   color: var(--text-muted);
 }
 
+.user-avatar-container {
+  position: relative;
+  cursor: pointer;
+}
+
+.user-avatar-img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border);
+}
+
+.user-avatar-placeholder {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border: 2px solid var(--border);
+}
+
+.user-tooltip {
+  visibility: hidden;
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s, visibility 0.2s;
+  z-index: 100;
+}
+
+.user-avatar-container:hover .user-tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+
 .btn-logout {
   padding: 0.5rem 1rem;
   background: transparent;
@@ -174,6 +223,25 @@ a:hover {
   background: var(--border);
 }
 
+.btn-danger {
+  padding: 0.5rem 1rem;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.btn-danger:hover {
+  background: #dc2626;
+}
+
+.btn-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .error-message {
   padding: 0.75rem;
   background: #fef2f2;
@@ -194,6 +262,45 @@ a:hover {
   text-align: center;
   margin-top: 1rem;
   color: var(--text-muted);
+}
+
+.oauth-divider {
+  display: flex;
+  align-items: center;
+  margin: 1.5rem 0;
+}
+
+.oauth-divider::before,
+.oauth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.oauth-divider span {
+  padding: 0 1rem;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.btn-google {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1rem;
+  background: white;
+  color: #333;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-google:hover {
+  background: #f8f9fa;
 }
 
 /* Dashboard */
@@ -299,4 +406,89 @@ a:hover {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
+}
+
+/* Profile */
+.profile-container {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.profile-container h1 {
+  margin-bottom: 2rem;
+}
+
+.profile-section {
+  background: var(--card-bg);
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  margin-bottom: 1.5rem;
+}
+
+.profile-section h2 {
+  margin-bottom: 1rem;
+  font-size: 1.125rem;
+  color: var(--foreground);
+}
+
+.account-info p {
+  margin-bottom: 0.5rem;
+  color: var(--text-muted);
+}
+
+.account-info strong {
+  color: var(--foreground);
+}
+
+.profile-image-container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.profile-image {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+}
+
+.profile-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--primary);
+  color: white;
+}
+
+.btn-secondary {
+  padding: 0.5rem 1rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--foreground);
+}
+
+.btn-secondary:hover {
+  background: var(--border);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

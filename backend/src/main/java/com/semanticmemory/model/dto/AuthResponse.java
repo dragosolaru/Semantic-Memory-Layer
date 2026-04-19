@@ -10,8 +10,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class AuthResponse {
-    private String token;
-    private String type = "Bearer";
     private UserResponse user;
     
     @Data
@@ -21,7 +19,10 @@ public class AuthResponse {
     public static class UserResponse {
         private String id;
         private String email;
+        private String firstName;
+        private String lastName;
         private String name;
+        private String profileImageUrl;
         private String subscriptionTier;
     }
 }

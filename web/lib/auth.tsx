@@ -1,118 +1,163 @@
 'use client';
 
-/**
- * Authentication Context for Semantic Memory Layer Web Application
- * 
- * Provides JWT-based authentication with secure token storage.
- * NOTE: Tokens are stored in memory only (not localStorage) for security.
- * User data (non-sensitive) is cached in localStorage for faster initial load.
- * 
- * @module lib/auth
- */
-
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from './types';
-import { api, getToken, setToken as setApiToken } from './api';
+import { api } from './api';
 
 /**
- * Authentication context type definition
- * @interface AuthContextType
+ * Authentication context type definition.
+ * 
+ * Provides authentication state and methods to child components.
  */
 interface AuthContextType {
-  /** Currently authenticated user or null */
+  /** Current authenticated user or null if not logged in */
   user: User | null;
-  /** JWT token - stored in memory only, null when logged out */
-  token: string | null;
-  /** Login function to authenticate user */
-  login: (token: string, user: User) => void;
-  /** Logout function to clear authentication */
+  /**
+   * Login function to set user in context.
+   * Also persists user to localStorage for session persistence.
+   */
+  login: (user: User) => void;
+  /**
+   * Logout function that clears session.
+   * Calls backend logout endpoint and clears local storage.
+   */
   logout: () => void;
-  /** Whether auth state is still loading from storage */
+  /** Loading state while checking authentication */
   isLoading: boolean;
 }
 
+/**
+ * React Context for authentication state.
+ * Use useAuth() hook to access authentication methods.
+ */
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 /**
  * Authentication Provider Component
  * 
- * Wraps application to provide auth state. Token is kept in React state (memory)
- * for security. User data is cached in localStorage to avoid re-fetching on refresh.
+ * Wraps the application to provide authentication state and methods.
+ * Handles:
+ * - Initial session validation on app load
+ * - User data persistence in localStorage
+ * - Backend session verification
  * 
- * @param {ReactNode} children - Child components
- * @returns {JSX.Element} AuthProvider with context
+ * Security features:
+ * - Validates session with backend on mount
+ * - Clears invalid sessions automatically
+ * - Uses HttpOnly cookies for authentication
+ * 
+ * @param {ReactNode} children - Child components that need auth access
+ * @returns AuthContext.Provider with authentication state
+ * 
+ * @example
+ * // In layout.tsx
+ * import { AuthProvider } from '@/lib/auth';
+ * 
+ * export default function RootLayout({ children }) {
+ *   return (
+ *     <AuthProvider>
+ *       {children}
+ *     </AuthProvider>
+ *   );
+ * }
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  /**
+   * Initialize authentication on component mount.
+   * 
+   * Process:
+   * 1. Check localStorage for cached user data
+   * 2. Validate session with backend API
+   * 3. Update state based on validation result
+   * 
+   * This ensures sessions persist across page refreshes.
+   */
   useEffect(() => {
-    // Restore user from localStorage cache (token cannot be restored for security)
-    const savedUser = localStorage.getItem('user');
-    
-    if (savedUser) {
+    const initAuth = async () => {
+      // First, try to get cached user from localStorage
+      const savedUser = localStorage.getItem('user');
+      
+      if (savedUser) {
+        try {
+          setUser(JSON.parse(savedUser));
+        } catch {
+          localStorage.removeItem('user');
+        }
+      }
+      
+      // Then validate session with backend
       try {
-        setUser(JSON.parse(savedUser));
-        // Note: Token is NOT restored from localStorage for security
-        // User will need to re-authenticate if token expires
+        const backendUser = await api.getUser();
+        setUser(backendUser);
+        localStorage.setItem('user', JSON.stringify(backendUser));
       } catch {
+        // No valid session - clear any cached data
+        setUser(null);
         localStorage.removeItem('user');
       }
-    }
-    setIsLoading(false);
+      
+      setIsLoading(false);
+    };
+
+    initAuth();
   }, []);
 
-/**
-   * Login user and store authentication data
+  /**
+   * Login function - sets user in context and localStorage.
    * 
-   * Security: Token is stored in memory only (not localStorage).
-   * User data is cached in localStorage for faster subsequent loads.
-   * 
-   * @param {string} tokenValue - JWT token from authentication
-   * @param {User} userData - Authenticated user data
+   * @param userData - User data from successful authentication
    */
-  const login = (tokenValue: string, userData: User) => {
-    setApiToken(tokenValue);
+  const login = (userData: User) => {
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));
   };
 
   /**
-   * Logout current user
+   * Logout function - clears session on backend and locally.
    * 
-   * Clears all authentication state and calls logout API.
-   * Removes user cache from localStorage.
+   * Calls logout endpoint to invalidate server session,
+   * then clears local state and storage.
    */
   const logout = async () => {
     try {
       await api.logout();
     } catch {
-      // Continue with local cleanup even if API call fails
+      // Continue with cleanup even if backend call fails
     }
-    // Clear token from memory
-    setApiToken(null);
     setUser(null);
-    // Clear user cache - token already not in localStorage
     localStorage.removeItem('user');
   };
 
   return (
-    <AuthContext.Provider value={{ user, token: getToken(), login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
 /**
- * Hook to access authentication context
+ * Hook to access authentication context.
  * 
- * @throws {Error} If used outside AuthProvider
- * @returns {AuthContextType} Authentication state and functions
+ * Must be used within an AuthProvider.
+ * 
+ * @returns Authentication context with user, login, logout, and isLoading
+ * @throws Error if used outside AuthProvider
  * 
  * @example
- * const { user, logout } = useAuth();
- * if (user) {
- *   console.log(`Logged in as ${user.name}`);
+ * import { useAuth } from '@/lib/auth';
+ * 
+ * function MyComponent() {
+ *   const { user, logout } = useAuth();
+ *   
+ *   return (
+ *     <div>
+ *       <p>Welcome, {user?.name}</p>
+ *       <button onClick={logout}>Logout</button>
+ *     </div>
+ *   );
  * }
  */
 export function useAuth() {

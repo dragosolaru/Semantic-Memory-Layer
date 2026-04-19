@@ -13,8 +13,14 @@ export interface User {
   id: string;
   /** User email address */
   email: string;
-  /** Display name */
-  name: string;
+  /** First name */
+  firstName?: string;
+  /** Last name */
+  lastName?: string;
+  /** Display name (computed) */
+  name?: string;
+  /** Profile image URL */
+  profileImageUrl?: string;
   /** Subscription tier (optional) */
   subscriptionTier?: string;
 }
@@ -24,12 +30,21 @@ export interface User {
  * @interface AuthResponse
  */
 export interface AuthResponse {
-  /** JWT authentication token */
-  token: string;
-  /** Token type (typically "Bearer") */
-  type: string;
-  /** Authenticated user data */
-  user: User;
+  token?: string;
+  refreshToken?: string;
+  type?: string;
+  expiresIn?: number;
+  user: UserResponse;
+}
+
+export interface UserResponse {
+  id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  name?: string;
+  profileImageUrl?: string;
+  subscriptionTier?: string;
 }
 
 /**
@@ -52,8 +67,10 @@ export interface RegisterRequest {
   email: string;
   /** User password */
   password: string;
-  /** User display name */
-  name: string;
+  /** User first name */
+  firstName?: string;
+  /** User last name */
+  lastName?: string;
 }
 
 /**

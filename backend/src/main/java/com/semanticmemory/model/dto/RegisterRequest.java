@@ -15,5 +15,7 @@ public class RegisterRequest {
     @Size(min = 6)
     private String password;
     
-    private String name;
+    private String firstName;
+    
+    private String lastName;
 }

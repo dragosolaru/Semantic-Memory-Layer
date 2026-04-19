@@ -25,7 +25,8 @@ import { api } from '@/lib/api';
  * @returns {JSX.Element} Registration form
  */
 export default function RegisterPage() {
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -44,8 +45,8 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      const response = await api.register({ name, email, password });
-      login(response.token, response.user);
+      const response = await api.register({ firstName, lastName, email, password });
+      login(response.user);
       router.push('/home');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
@@ -61,14 +62,24 @@ export default function RegisterPage() {
         <form onSubmit={handleSubmit}>
           {error && <div className="error-message">{error}</div>}
           <div className="form-group">
-            <label htmlFor="name">Name</label>
+            <label htmlFor="firstName">First Name</label>
             <input
-              id="name"
+              id="firstName"
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
               required
-              placeholder="Enter your name"
+              placeholder="Enter your first name"
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="lastName">Last Name</label>
+            <input
+              id="lastName"
+              type="text"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              placeholder="Enter your last name"
             />
           </div>
           <div className="form-group">

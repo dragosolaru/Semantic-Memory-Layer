@@ -3,6 +3,7 @@ package com.semanticmemory.service;
 import com.semanticmemory.exception.GlobalExceptionHandler.AuthException;
 import com.semanticmemory.exception.GlobalExceptionHandler.NotFoundException;
 import com.semanticmemory.model.dto.*;
+import com.semanticmemory.model.entity.RefreshToken;
 import com.semanticmemory.model.entity.User;
 import com.semanticmemory.repository.UserRepository;
 import io.jsonwebtoken.Jwts;
@@ -10,44 +11,34 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
 import javax.crypto.SecretKey;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Optional;
 
-/**
- * Authentication service.
- * 
- * Handles:
- * - User login with credentials
- * - User registration
- * - Password change with verification
- * - JWT token generation
- */
 @Service
 public class AuthService {
     
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final RefreshTokenService refreshTokenService;
+    private final FileUploadService fileUploadService;
     
-    @Value("${jwt.secret:semantic-memory-secret-key-minimum-256-bits-for-hs256}")
+    @Value("${jwt.secret}")
     private String jwtSecret;
     
     @Value("${jwt.expiration:86400000}")
     private long jwtExpiration;
     
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, RefreshTokenService refreshTokenService, FileUploadService fileUploadService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.refreshTokenService = refreshTokenService;
+        this.fileUploadService = fileUploadService;
     }
     
-    /**
-     * Authenticate user with email and password.
-     * 
-     * @param request Login credentials
-     * @return JWT token and user data
-     * @throws AuthException if credentials are invalid
-     */
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
             .orElseThrow(() -> new AuthException("Invalid credentials"));
@@ -59,24 +50,21 @@ public class AuthService {
         user.setLastLoginAt(LocalDateTime.now());
         userRepository.save(user);
         
+        refreshTokenService.createRefreshToken(user);
+        
         return AuthResponse.builder()
-            .token(generateToken(user))
             .user(AuthResponse.UserResponse.builder()
                 .id(user.getId().toString())
                 .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
                 .name(user.getName())
+                .profileImageUrl(user.getProfileImageUrl())
                 .subscriptionTier(user.getSubscriptionTier().name())
                 .build())
             .build();
     }
     
-    /**
-     * Register new user account.
-     * 
-     * @param request Registration data
-     * @return JWT token and user data
-     * @throws AuthException if email already exists
-     */
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new AuthException("Email already exists");
@@ -85,33 +73,28 @@ public class AuthService {
         User user = User.builder()
             .email(request.getEmail())
             .password(passwordEncoder.encode(request.getPassword()))
-            .name(request.getName())
+            .firstName(request.getFirstName())
+            .lastName(request.getLastName())
             .subscriptionTier(User.SubscriptionTier.FREE)
             .build();
         
         user = userRepository.save(user);
         
+        refreshTokenService.createRefreshToken(user);
+        
         return AuthResponse.builder()
-            .token(generateToken(user))
             .user(AuthResponse.UserResponse.builder()
                 .id(user.getId().toString())
                 .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
                 .name(user.getName())
+                .profileImageUrl(user.getProfileImageUrl())
                 .subscriptionTier(user.getSubscriptionTier().name())
                 .build())
             .build();
     }
 
-    /**
-     * Change user password.
-     * 
-     * Requires current password verification.
-     * 
-     * @param request Password change data
-     * @return Success message
-     * @throws NotFoundException if user not found
-     * @throws AuthException if current password is incorrect
-     */
     public MessageResponse changePassword(ChangePasswordRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
             .orElseThrow(() -> new NotFoundException("User not found"));
@@ -126,32 +109,121 @@ public class AuthService {
         return new MessageResponse("Password changed successfully");
     }
 
-    /**
-     * Get user by ID.
-     * 
-     * @param id User UUID
-     * @return Optional user
-     */
     public Optional<User> getUserById(String id) {
         return userRepository.findById(java.util.UUID.fromString(id));
     }
     
-    /**
-     * Generate JWT token for user.
-     * 
-     * @param user User entity
-     * @return JWT token string
-     */
-    private String generateToken(User user) {
+    public Optional<User> getUserByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+    
+    public String generateToken(User user) {
         SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
-        long expirationMs = jwtExpiration;
         
         return Jwts.builder()
             .subject(user.getId().toString())
             .claim("email", user.getEmail())
+            .claim("role", "ROLE_" + user.getSubscriptionTier().name())
             .issuedAt(new Date())
-            .expiration(new Date(System.currentTimeMillis() + expirationMs))
+            .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
             .signWith(key)
             .compact();
+    }
+    
+    public AuthResponse.UserResponse updateProfile(String userId, ProfileUpdateRequest request) {
+        User user = userRepository.findById(java.util.UUID.fromString(userId))
+            .orElseThrow(() -> new NotFoundException("User not found"));
+        
+        if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
+            if (userRepository.existsByEmail(request.getEmail())) {
+                throw new AuthException("Email already in use");
+            }
+            user.setEmail(request.getEmail());
+        }
+        
+        if (request.getFirstName() != null) {
+            user.setFirstName(request.getFirstName());
+        }
+        
+        if (request.getLastName() != null) {
+            user.setLastName(request.getLastName());
+        }
+        
+        userRepository.save(user);
+        
+        return AuthResponse.UserResponse.builder()
+            .id(user.getId().toString())
+            .email(user.getEmail())
+            .firstName(user.getFirstName())
+            .lastName(user.getLastName())
+            .name(user.getName())
+            .profileImageUrl(user.getProfileImageUrl())
+            .subscriptionTier(user.getSubscriptionTier().name())
+            .build();
+    }
+    
+    public AuthResponse.UserResponse updateProfileImage(String userId, String imageUrl) {
+        User user = userRepository.findById(java.util.UUID.fromString(userId))
+            .orElseThrow(() -> new NotFoundException("User not found"));
+        
+        fileUploadService.deleteOldImageIfExists(user.getProfileImageUrl());
+        
+        user.setProfileImageUrl(imageUrl);
+        userRepository.save(user);
+        
+        return AuthResponse.UserResponse.builder()
+            .id(user.getId().toString())
+            .email(user.getEmail())
+            .firstName(user.getFirstName())
+            .lastName(user.getLastName())
+            .name(user.getName())
+            .profileImageUrl(user.getProfileImageUrl())
+            .subscriptionTier(user.getSubscriptionTier().name())
+            .build();
+    }
+    
+    public AuthResponse.UserResponse uploadProfileImage(String userId, MultipartFile file) {
+        User user = userRepository.findById(java.util.UUID.fromString(userId))
+            .orElseThrow(() -> new NotFoundException("User not found"));
+        
+        try {
+            fileUploadService.deleteOldImageIfExists(user.getProfileImageUrl());
+            
+            String imageUrl = fileUploadService.uploadProfileImage(file, userId);
+            user.setProfileImageUrl(imageUrl);
+            userRepository.save(user);
+            
+            return AuthResponse.UserResponse.builder()
+                .id(user.getId().toString())
+                .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .name(user.getName())
+                .profileImageUrl(user.getProfileImageUrl())
+                .subscriptionTier(user.getSubscriptionTier().name())
+                .build();
+        } catch (Exception e) {
+            throw new AuthException("Failed to upload image: " + e.getMessage());
+        }
+    }
+    
+    public AuthResponse.UserResponse deleteProfileImage(String userId) {
+        User user = userRepository.findById(java.util.UUID.fromString(userId))
+            .orElseThrow(() -> new NotFoundException("User not found"));
+        
+        fileUploadService.deleteOldImageIfExists(user.getProfileImageUrl());
+        
+        user.setProfileImageUrl(null);
+        userRepository.save(user);
+        
+        return AuthResponse.UserResponse.builder()
+            .id(user.getId().toString())
+            .email(user.getEmail())
+            .firstName(user.getFirstName())
+            .lastName(user.getLastName())
+            .name(user.getName())
+            .profileImageUrl(null)
+            .subscriptionTier(user.getSubscriptionTier().name())
+            .build();
     }
 }
